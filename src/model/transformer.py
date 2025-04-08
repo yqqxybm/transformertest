@@ -1,11 +1,11 @@
 import torch
 import torch.nn as nn
 from .attention import MultiHeadAttention
-
+#位置编码
 class PositionalEncoding(nn.Module):
     def __init__(self, dModel, maxLen=5000):
         super(PositionalEncoding, self).__init__()
-        
+        # 创建位置编码矩阵
         pe = torch.zeros(maxLen, dModel)
         position = torch.arange(0, maxLen, dtype=torch.float).unsqueeze(1)
         divTerm = torch.exp(torch.arange(0, dModel, 2).float() * (-math.log(10000.0) / dModel))
@@ -23,9 +23,10 @@ class TransformerBlock(nn.Module):
         super(TransformerBlock, self).__init__()
         
         self.attention = MultiHeadAttention(dModel, numHeads)
+        # 归一化，为了避免padding token的影响选择layerNorm
         self.norm1 = nn.LayerNorm(dModel)
         self.norm2 = nn.LayerNorm(dModel)
-        
+        # 位置前馈网络
         self.feedForward = nn.Sequential(
             nn.Linear(dModel, dFf),
             nn.ReLU(),
@@ -41,6 +42,7 @@ class TransformerBlock(nn.Module):
         
         # 前馈网络
         ffOutput = self.feedForward(x)
+        #跳连 add&norm
         x = self.norm2(x + self.dropout(ffOutput))
         
         return x
@@ -49,7 +51,7 @@ class Transformer(nn.Module):
     def __init__(self, srcVocabSize, tgtVocabSize, dModel=512, numHeads=8, 
                  numLayers=6, dFf=2048, dropout=0.1):
         super(Transformer, self).__init__()
-        
+        # 创建源语言和目标语言的嵌入层，实现对输入序列的词嵌入
         self.srcEmbedding = nn.Embedding(srcVocabSize, dModel)
         self.tgtEmbedding = nn.Embedding(tgtVocabSize, dModel)
         self.positionalEncoding = PositionalEncoding(dModel)
