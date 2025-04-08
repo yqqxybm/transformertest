@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import math
 from .attention import MultiHeadAttention
 #位置编码
 class PositionalEncoding(nn.Module):
@@ -22,7 +23,11 @@ class TransformerBlock(nn.Module):
     def __init__(self, dModel, numHeads, dFf, dropout=0.1):
         super(TransformerBlock, self).__init__()
         
-        self.attention = MultiHeadAttention(dModel, numHeads)
+        # 计算dK和dV
+        dK = dModel // numHeads
+        dV = dModel // numHeads
+        
+        self.attention = MultiHeadAttention(dK, dV, dModel, numHeads, dropout)
         # 归一化，为了避免padding token的影响选择layerNorm
         self.norm1 = nn.LayerNorm(dModel)
         self.norm2 = nn.LayerNorm(dModel)
